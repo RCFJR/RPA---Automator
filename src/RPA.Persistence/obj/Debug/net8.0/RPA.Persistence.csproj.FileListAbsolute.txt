@@ -1,0 +1,15 @@
+C:\Projects\RPA\src\RPA.Persistence\bin\Debug\net8.0\RPA.Persistence.deps.json
+C:\Projects\RPA\src\RPA.Persistence\bin\Debug\net8.0\RPA.Persistence.dll
+C:\Projects\RPA\src\RPA.Persistence\bin\Debug\net8.0\RPA.Persistence.pdb
+C:\Projects\RPA\src\RPA.Persistence\bin\Debug\net8.0\RPA.Core.dll
+C:\Projects\RPA\src\RPA.Persistence\bin\Debug\net8.0\RPA.Core.pdb
+C:\Projects\RPA\src\RPA.Persistence\obj\Debug\net8.0\RPA.Persistence.csproj.AssemblyReference.cache
+C:\Projects\RPA\src\RPA.Persistence\obj\Debug\net8.0\RPA.Persistence.GeneratedMSBuildEditorConfig.editorconfig
+C:\Projects\RPA\src\RPA.Persistence\obj\Debug\net8.0\RPA.Persistence.AssemblyInfoInputs.cache
+C:\Projects\RPA\src\RPA.Persistence\obj\Debug\net8.0\RPA.Persistence.AssemblyInfo.cs
+C:\Projects\RPA\src\RPA.Persistence\obj\Debug\net8.0\RPA.Persistence.csproj.CoreCompileInputs.cache
+C:\Projects\RPA\src\RPA.Persistence\obj\Debug\net8.0\RPA.Pers.889CC4E3.Up2Date
+C:\Projects\RPA\src\RPA.Persistence\obj\Debug\net8.0\RPA.Persistence.dll
+C:\Projects\RPA\src\RPA.Persistence\obj\Debug\net8.0\refint\RPA.Persistence.dll
+C:\Projects\RPA\src\RPA.Persistence\obj\Debug\net8.0\RPA.Persistence.pdb
+C:\Projects\RPA\src\RPA.Persistence\obj\Debug\net8.0\ref\RPA.Persistence.dll

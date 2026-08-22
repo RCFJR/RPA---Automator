@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RPA.App/RPA.App.csproj" />
+    <Project Path="src/RPA.Automation/RPA.Automation.csproj" />
+    <Project Path="src/RPA.Core/RPA.Core.csproj" />
+    <Project Path="src/RPA.Execution/RPA.Execution.csproj" />
+    <Project Path="src/RPA.Persistence/RPA.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RPA.Core.Tests/RPA.Core.Tests.csproj" />
+    <Project Path="tests/RPA.Execution.Tests/RPA.Execution.Tests.csproj" />
+  </Folder>
+</Solution>

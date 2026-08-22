@@ -1,0 +1,100 @@
+﻿<Window x:Class="RPA.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RPA.App"
+        mc:Ignorable="d"
+        Title="RPA Configurável" Height="700" Width="1200" Background="#F5F5F5">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Menu/Toolbar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Background="#FFFFFF" Padding="15" BorderThickness="0,0,0,1" BorderBrush="#CCCCCC">
+            <Button Content="Novo Fluxo" Padding="10,5" Margin="0,0,10,0" Background="#007ACC" Foreground="White" FontSize="12"/>
+            <Button Content="Abrir Fluxo" Padding="10,5" Margin="0,0,10,0" Background="#007ACC" Foreground="White" FontSize="12"/>
+            <Button Content="Salvar Fluxo" Padding="10,5" Margin="0,0,10,0" Background="#007ACC" Foreground="White" FontSize="12"/>
+            <Separator Width="1" Background="#CCCCCC" Margin="10,0"/>
+            <Button Content="Carregar CSV" Padding="10,5" Margin="10,0,10,0" Background="#0E7C0E" Foreground="White" FontSize="12"/>
+            <Button Content="Executar" Padding="10,5" Margin="0,0,10,0" Background="#D13438" Foreground="White" FontSize="12"/>
+        </StackPanel>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Panel: Flow Structure -->
+            <StackPanel Grid.Column="0" Background="#F5F5F5" Margin="0,10,10,10">
+                <TextBlock Text="Estrutura do Fluxo" FontSize="14" FontWeight="Bold" Margin="10,0"/>
+                <ListBox Name="FlowStepsListBox" Margin="10,10" Height="400" Background="White" BorderBrush="#D0D0D0"/>
+                <StackPanel Orientation="Horizontal" Margin="10">
+                    <Button Content="+ Adicionar" Padding="8,4" Margin="0,0,5,0" Background="#107C10" Foreground="White"/>
+                    <Button Content="- Remover" Padding="8,4" Background="#D13438" Foreground="White"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Right Panel: Editor and Preview -->
+            <TabControl Grid.Column="1" Margin="0,10,10,10" Background="White">
+                <TabItem Header="Editor de Passos" Background="White">
+                    <Grid Padding="15">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Propriedades do Step Selecionado" FontSize="12" FontWeight="Bold"/>
+
+                        <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                            <TextBlock Text="Tipo:" FontSize="11" Margin="0,0,0,3"/>
+                            <ComboBox Padding="8,5" ItemsSource="{Binding StepTypes}" Background="White" BorderBrush="#D0D0D0" Height="30"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Margin="0,10,0,0">
+                            <TextBlock Text="Label (opcional):" FontSize="11" Margin="0,0,0,3"/>
+                            <TextBox Padding="8,5" Background="White" BorderBrush="#D0D0D0" Height="30"/>
+                        </StackPanel>
+
+                        <ScrollViewer Grid.Row="3" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto">
+                            <TextBlock Text="[Propriedades específicas do tipo de step aparecerão aqui]" Foreground="#666666"/>
+                        </ScrollViewer>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Visualizar CSV" Background="White">
+                    <DataGrid Margin="15" Background="White" BorderBrush="#D0D0D0" AutoGenerateColumns="True" IsReadOnly="True"/>
+                </TabItem>
+
+                <TabItem Header="Gravador" Background="White">
+                    <StackPanel Padding="15" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <Button Content="▶ Iniciar Gravação" Padding="15,10" Background="#0E7C0E" Foreground="White" FontSize="14" Width="200" Height="50" Margin="0,0,0,20"/>
+                        <TextBlock Text="Clique no botão acima e realize os cliques no sistema alvo." TextAlignment="Center" Foreground="#666666"/>
+                        <TextBlock Text="Pressione ESC ou clique no botão para parar a gravação." TextAlignment="Center" Foreground="#666666" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </TabItem>
+
+                <TabItem Header="Execução" Background="White">
+                    <StackPanel Padding="15">
+                        <TextBlock Text="Status:" FontSize="12" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <TextBlock Text="Aguardando CSV carregado..." Foreground="#666666" Margin="0,0,0,20"/>
+                        <ProgressBar Height="20" Value="0" Margin="0,0,0,20" Background="#F0F0F0" Foreground="#107C10"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Pausar" Padding="10,5" Margin="0,0,10,0" Background="#FFB900" Foreground="White" IsEnabled="False"/>
+                            <Button Content="Retomar" Padding="10,5" Margin="0,0,10,0" Background="#FFB900" Foreground="White" IsEnabled="False"/>
+                            <Button Content="Parar" Padding="10,5" Background="#D13438" Foreground="White" IsEnabled="False"/>
+                        </StackPanel>
+                        <TextBlock Text="Log de Execução:" FontSize="12" FontWeight="Bold" Margin="0,20,0,10"/>
+                        <ListBox Height="300" Background="#F8F8F8" BorderBrush="#D0D0D0"/>
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </Grid>
+</Window>

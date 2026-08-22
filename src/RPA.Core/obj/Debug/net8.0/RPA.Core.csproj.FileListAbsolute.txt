@@ -1,0 +1,12 @@
+C:\Projects\RPA\src\RPA.Core\bin\Debug\net8.0\RPA.Core.deps.json
+C:\Projects\RPA\src\RPA.Core\bin\Debug\net8.0\RPA.Core.dll
+C:\Projects\RPA\src\RPA.Core\bin\Debug\net8.0\RPA.Core.pdb
+C:\Projects\RPA\src\RPA.Core\obj\Debug\net8.0\RPA.Core.csproj.AssemblyReference.cache
+C:\Projects\RPA\src\RPA.Core\obj\Debug\net8.0\RPA.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Projects\RPA\src\RPA.Core\obj\Debug\net8.0\RPA.Core.AssemblyInfoInputs.cache
+C:\Projects\RPA\src\RPA.Core\obj\Debug\net8.0\RPA.Core.AssemblyInfo.cs
+C:\Projects\RPA\src\RPA.Core\obj\Debug\net8.0\RPA.Core.csproj.CoreCompileInputs.cache
+C:\Projects\RPA\src\RPA.Core\obj\Debug\net8.0\RPA.Core.dll
+C:\Projects\RPA\src\RPA.Core\obj\Debug\net8.0\refint\RPA.Core.dll
+C:\Projects\RPA\src\RPA.Core\obj\Debug\net8.0\RPA.Core.pdb
+C:\Projects\RPA\src\RPA.Core\obj\Debug\net8.0\ref\RPA.Core.dll

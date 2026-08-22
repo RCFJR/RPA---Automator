@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "Ax3p1495+nI=",
+  "success": true,
+  "projectFilePath": "C:\\Projects\\RPA\\src\\RPA.App\\RPA.App.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\rober\\.nuget\\packages\\communitytoolkit.mvvm\\8.4.2\\communitytoolkit.mvvm.8.4.2.nupkg.sha512",
+    "C:\\Users\\rober\\.nuget\\packages\\csvhelper\\33.1.0\\csvhelper.33.1.0.nupkg.sha512",
+    "C:\\Users\\rober\\.nuget\\packages\\sharphook\\5.3.9\\sharphook.5.3.9.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "6cIOO1zJUPQ=",
+  "success": true,
+  "projectFilePath": "C:\\Projects\\RPA\\src\\RPA.Persistence\\RPA.Persistence.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\rober\\.nuget\\packages\\csvhelper\\33.1.0\\csvhelper.33.1.0.nupkg.sha512"
+  ],
+  "logs": []
+}
