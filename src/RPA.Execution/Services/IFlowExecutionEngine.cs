@@ -7,6 +7,12 @@ public interface IFlowExecutionEngine
 {
     Task<List<ExecutionResult>> RunAsync(
         Flow flow,
+        ExecutionOptions options,
+        IProgress<ExecutionProgress>? progress = null,
+        CancellationToken ct = default);
+
+    Task<List<ExecutionResult>> RunAsync(
+        Flow flow,
         List<CsvRow> rows,
         ExecutionOptions options,
         IProgress<ExecutionProgress>? progress = null,

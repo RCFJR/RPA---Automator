@@ -16,17 +16,20 @@ public class FlowExecutionEngine : IFlowExecutionEngine
 
     public async Task<List<ExecutionResult>> RunAsync(
         Flow flow,
-        List<CsvRow> rows,
         ExecutionOptions options,
         IProgress<ExecutionProgress>? progress = null,
         CancellationToken ct = default)
     {
+        if (flow.ExecutionSource == null)
+            throw new InvalidOperationException("Flow deve ter uma ExecutionSource configurada.");
+
         var results = new List<ExecutionResult>();
         _pauseSemaphore = new SemaphoreSlim(1, 1);
+        var iterationCount = flow.ExecutionSource.GetIterationCount();
 
         try
         {
-            for (int i = 0; i < rows.Count; i++)
+            for (int i = 0; i < iterationCount; i++)
             {
                 ct.ThrowIfCancellationRequested();
 
@@ -40,12 +43,16 @@ public class FlowExecutionEngine : IFlowExecutionEngine
 
                 try
                 {
-                    var row = rows[i];
+                    var rowValues = flow.ExecutionSource.GetRowAt(i);
+                    var iterationLabel = flow.ExecutionSource is RepeatExecutionSource
+                        ? $"Repetição {i + 1}"
+                        : $"Linha {i + 1}";
+
                     progress?.Report(new ExecutionProgress
                     {
                         CurrentRowIndex = i,
-                        TotalRows = rows.Count,
-                        CurrentStep = $"Processando linha {i + 1}..."
+                        TotalRows = iterationCount,
+                        CurrentStep = $"Processando {iterationLabel}..."
                     });
 
                     foreach (var step in flow.Steps)
@@ -55,11 +62,11 @@ public class FlowExecutionEngine : IFlowExecutionEngine
                         progress?.Report(new ExecutionProgress
                         {
                             CurrentRowIndex = i,
-                            TotalRows = rows.Count,
+                            TotalRows = iterationCount,
                             CurrentStep = step.Label ?? step.GetType().Name
                         });
 
-                        await _stepExecutor.ExecuteAsync(step, row, ct);
+                        await _stepExecutor.ExecuteAsync(step, rowValues, ct);
 
                         if (options.StepDelayMs > 0)
                         {
@@ -96,6 +103,17 @@ public class FlowExecutionEngine : IFlowExecutionEngine
         }
 
         return results;
+    }
+
+    public async Task<List<ExecutionResult>> RunAsync(
+        Flow flow,
+        List<CsvRow> rows,
+        ExecutionOptions options,
+        IProgress<ExecutionProgress>? progress = null,
+        CancellationToken ct = default)
+    {
+        var flowWithCsv = flow with { ExecutionSource = new CsvExecutionSource(rows) };
+        return await RunAsync(flowWithCsv, options, progress, ct);
     }
 
     public void Pause()

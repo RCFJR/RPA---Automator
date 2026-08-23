@@ -1,100 +1,262 @@
-﻿<Window x:Class="RPA.App.MainWindow"
+<Window x:Class="RPA.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RPA.App"
-        mc:Ignorable="d"
-        Title="RPA Configurável" Height="700" Width="1200" Background="#F5F5F5">
-    <Grid>
+        xmlns:converters="clr-namespace:RPA.App.Converters"
+        xmlns:helpers="clr-namespace:RPA.App.Helpers"
+        xmlns:models="clr-namespace:RPA.Core.Models;assembly=RPA.Core"
+        Title="RPA Configurável" Height="700" Width="1200">
+    <Window.Resources>
+        <converters:BoolToColorConverter x:Key="BoolToColorConverter"/>
+        <converters:KeysListConverter x:Key="KeysListConverter"/>
+    </Window.Resources>
+
+    <Grid Background="#F5F5F5">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="60"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Menu/Toolbar -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Background="#FFFFFF" Padding="15" BorderThickness="0,0,0,1" BorderBrush="#CCCCCC">
-            <Button Content="Novo Fluxo" Padding="10,5" Margin="0,0,10,0" Background="#007ACC" Foreground="White" FontSize="12"/>
-            <Button Content="Abrir Fluxo" Padding="10,5" Margin="0,0,10,0" Background="#007ACC" Foreground="White" FontSize="12"/>
-            <Button Content="Salvar Fluxo" Padding="10,5" Margin="0,0,10,0" Background="#007ACC" Foreground="White" FontSize="12"/>
-            <Separator Width="1" Background="#CCCCCC" Margin="10,0"/>
-            <Button Content="Carregar CSV" Padding="10,5" Margin="10,0,10,0" Background="#0E7C0E" Foreground="White" FontSize="12"/>
-            <Button Content="Executar" Padding="10,5" Margin="0,0,10,0" Background="#D13438" Foreground="White" FontSize="12"/>
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Background="#FFF" VerticalAlignment="Center">
+            <Button Content="✨ Novo Fluxo" Margin="10" Padding="10,5" Background="#007ACC" Foreground="White" Command="{Binding FlowEditorViewModel.CreateNewFlowCommand}"/>
+            <Button Content="📂 Carregar Fluxo" Margin="0,10,10,10" Padding="10,5" Background="#007ACC" Foreground="White" Command="{Binding FlowEditorViewModel.LoadFlowCommand}"/>
+            <Button Content="💾 Salvar Fluxo" Margin="0,10,10,10" Padding="10,5" Background="#007ACC" Foreground="White" Command="{Binding FlowEditorViewModel.SaveFlowCommand}"/>
+            <Separator Background="#DDD" Width="1" Margin="5,0"/>
+            <Button Content="📊 Carregar CSV" Margin="10,10,10,10" Padding="10,5" Background="#0E7C0E" Foreground="White" Command="{Binding CsvLoaderViewModel.LoadCsvCommand}"/>
+            <Button Content="▶️ Executar" Margin="0,10,10,10" Padding="10,5" Background="#D13438" Foreground="White" Command="{Binding ExecuteFlowCommand}"/>
         </StackPanel>
 
-        <!-- Main Content -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <!-- Tabs -->
+        <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex}" Margin="10">
+            <!-- Tab 0: Editor -->
+            <TabItem Header="✏️ Editor">
+                <Grid Background="White">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="300"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-            <!-- Left Panel: Flow Structure -->
-            <StackPanel Grid.Column="0" Background="#F5F5F5" Margin="0,10,10,10">
-                <TextBlock Text="Estrutura do Fluxo" FontSize="14" FontWeight="Bold" Margin="10,0"/>
-                <ListBox Name="FlowStepsListBox" Margin="10,10" Height="400" Background="White" BorderBrush="#D0D0D0"/>
-                <StackPanel Orientation="Horizontal" Margin="10">
-                    <Button Content="+ Adicionar" Padding="8,4" Margin="0,0,5,0" Background="#107C10" Foreground="White"/>
-                    <Button Content="- Remover" Padding="8,4" Background="#D13438" Foreground="White"/>
-                </StackPanel>
-            </StackPanel>
+                    <StackPanel Grid.Column="0" Margin="15">
+                        <TextBlock Text="Nome do Fluxo:" Margin="0,0,0,5" FontWeight="Bold"/>
+                        <TextBox Text="{Binding FlowEditorViewModel.FlowName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
 
-            <!-- Right Panel: Editor and Preview -->
-            <TabControl Grid.Column="1" Margin="0,10,10,10" Background="White">
-                <TabItem Header="Editor de Passos" Background="White">
-                    <Grid Padding="15">
+                        <TextBlock Text="Modo de Execução:" Margin="0,0,0,10" FontWeight="Bold"/>
+                        <Border BorderBrush="#DDD" BorderThickness="1" Margin="0,0,0,15" Padding="10">
+                            <StackPanel>
+                                <RadioButton Content="📊 Por CSV" Margin="0,0,0,8" IsChecked="{Binding FlowEditorViewModel.UsesCsv, UpdateSourceTrigger=PropertyChanged}"/>
+                                <RadioButton Content="🔁 Por Repetições" Margin="0,0,0,0" IsChecked="{Binding FlowEditorViewModel.UsesRepeat, Mode=OneWay}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="{Binding FlowEditorViewModel.ExecutionModeHint}" Foreground="#666" FontSize="10" Margin="0,0,0,15" TextWrapping="Wrap"/>
+
+                        <TextBlock Text="Quantidade de Repetições:" Margin="0,0,0,5" FontWeight="Bold" Visibility="{Binding FlowEditorViewModel.RepeatCountVisibility}"/>
+                        <TextBox Text="{Binding FlowEditorViewModel.RepeatCount, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15" Visibility="{Binding FlowEditorViewModel.RepeatCountVisibility}"/>
+
+
+                        <TextBlock Text="Passos:" Margin="0,0,0,5" FontWeight="Bold"/>
+                        <ListBox ItemsSource="{Binding FlowEditorViewModel.Steps}" SelectedIndex="{Binding FlowEditorViewModel.SelectedIndex}" Height="200" Margin="0,0,0,10" HorizontalContentAlignment="Stretch">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="{x:Type ListBoxItem}">
+                                    <Setter Property="Padding" Value="5"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                    <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="#E8F4F8"/>
+                                            <Setter Property="BorderBrush" Value="#0078D4"/>
+                                            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Label}" FontWeight="Bold" Margin="0,0,0,2"/>
+                                        <TextBlock Text="{Binding Summary}" Foreground="#666666" FontSize="11" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,5,0,10">
+                            <Button Content="⬆️" Padding="5" Margin="0,0,5,0" Command="{Binding FlowEditorViewModel.MoveStepUpCommand}"/>
+                            <Button Content="⬇️" Padding="5" Margin="0,0,5,0" Command="{Binding FlowEditorViewModel.MoveStepDownCommand}"/>
+                            <Button Content="🗑️ Remover" Padding="5" Command="{Binding FlowEditorViewModel.RemoveStepCommand}"/>
+                        </StackPanel>
+
+                        <ComboBox x:Name="StepTypeCombo" ItemsSource="{Binding FlowEditorViewModel.StepTypeOptions}" Margin="0,0,0,5"/>
+                        <Button Content="➕ Adicionar" Command="{Binding FlowEditorViewModel.AddStepCommand}" CommandParameter="{Binding SelectedItem, ElementName=StepTypeCombo}"/>
+                    </StackPanel>
+
+                    <!-- Painel Dinâmico de Propriedades -->
+                    <Border Grid.Column="1" BorderBrush="#CCC" BorderThickness="1" Margin="15" Padding="15">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ContentControl Content="{Binding FlowEditorViewModel.SelectedStep}">
+                                <ContentControl.Resources>
+                                    <!-- Template para ActivateWindowStep -->
+                                    <DataTemplate DataType="{x:Type models:ActivateWindowStep}">
+                                        <StackPanel>
+                                            <TextBlock Text="Propriedades - Ativar Janela" FontSize="14" FontWeight="Bold" Margin="0,0,0,20"/>
+                                            <TextBlock Text="Label:" Margin="0,0,0,5" FontWeight="Bold"/>
+                                            <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+                                            <TextBlock Text="Título da Janela (contém):" Margin="0,0,0,5" FontWeight="Bold"/>
+                                            <TextBox Text="{Binding WindowTitleContains, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15" TextWrapping="Wrap" MinHeight="60"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+
+                                    <!-- Template para WaitStep -->
+                                    <DataTemplate DataType="{x:Type models:WaitStep}">
+                                        <StackPanel>
+                                            <TextBlock Text="Propriedades - Aguardar" FontSize="14" FontWeight="Bold" Margin="0,0,0,20"/>
+                                            <TextBlock Text="Label:" Margin="0,0,0,5" FontWeight="Bold"/>
+                                            <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+                                            <TextBlock Text="Milissegundos:" Margin="0,0,0,5" FontWeight="Bold"/>
+                                            <TextBox Text="{Binding Milliseconds, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+                                            <TextBlock Foreground="#666" Text="Ex: 1000 = 1 segundo" FontSize="10"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+
+                                    <!-- Template para ClickStep -->
+                                    <DataTemplate DataType="{x:Type models:ClickStep}">
+                                        <StackPanel>
+                                            <TextBlock Text="Propriedades - Clique" FontSize="14" FontWeight="Bold" Margin="0,0,0,20"/>
+                                            <TextBlock Text="Label:" Margin="0,0,0,5" FontWeight="Bold"/>
+                                            <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+
+                                            <Grid Margin="0,0,0,15">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                                    <TextBlock Text="X:" Margin="0,0,0,5" FontWeight="Bold"/>
+                                                    <TextBox Text="{Binding X, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                                                    <TextBlock Text="Y:" Margin="0,0,0,5" FontWeight="Bold"/>
+                                                    <TextBox Text="{Binding Y, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </StackPanel>
+                                            </Grid>
+
+                                            <Button Content="🎯 Capturar Posição" Padding="10,8" Margin="0,0,0,15" Background="#FFB900" Foreground="White" Command="{Binding DataContext.FlowEditorViewModel.CapturePositionCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+
+                                            <TextBlock Text="Botão:" Margin="0,0,0,5" FontWeight="Bold"/>
+                                            <ComboBox ItemsSource="{x:Static helpers:EnumSource.MouseButtonKinds}" SelectedItem="{Binding Button, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+
+                                            <TextBlock Text="Tipo:" Margin="0,0,0,5" FontWeight="Bold"/>
+                                            <ComboBox ItemsSource="{x:Static helpers:EnumSource.ClickKinds}" SelectedItem="{Binding Kind, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+
+                                            <TextBlock Text="Origem:" Margin="0,0,0,5" FontWeight="Bold"/>
+                                            <ComboBox ItemsSource="{x:Static helpers:EnumSource.CoordinateOrigins}" SelectedItem="{Binding Origin, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+
+                                    <!-- Template para TypeTextStep -->
+                                    <DataTemplate DataType="{x:Type models:TypeTextStep}">
+                                        <StackPanel>
+                                            <TextBlock Text="Propriedades - Digitar Texto" FontSize="14" FontWeight="Bold" Margin="0,0,0,20"/>
+                                            <TextBlock Text="Label:" Margin="0,0,0,5" FontWeight="Bold"/>
+                                            <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+
+                                            <TextBlock Text="Texto/Template:" Margin="0,0,0,5" FontWeight="Bold"/>
+                                            <TextBox Text="{Binding Template, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" MinHeight="80" Margin="0,0,0,15"/>
+                                            <TextBlock Foreground="#666" Text="Use {{NomeColunaCSV}} para inserir valores do CSV" FontSize="10" Margin="0,0,0,15"/>
+
+                                            <Grid Margin="0,0,0,15">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <ComboBox Grid.Column="0" Margin="0,0,5,0" ItemsSource="{Binding DataContext.CsvLoaderViewModel.Headers, RelativeSource={RelativeSource AncestorType=Window}}" x:Name="ColumnCombo"/>
+                                                <Button Grid.Column="1" Content="➕ Inserir" Padding="10,5" Background="#107C10" Foreground="White" Command="{Binding DataContext.FlowEditorViewModel.InsertPlaceholderCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding SelectedItem, ElementName=ColumnCombo}"/>
+                                            </Grid>
+
+                                            <TextBlock Text="Modo:" Margin="0,0,0,5" FontWeight="Bold"/>
+                                            <ComboBox ItemsSource="{x:Static helpers:EnumSource.TypeModes}" SelectedItem="{Binding Mode, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+
+                                    <!-- Template para KeyPressStep -->
+                                    <DataTemplate DataType="{x:Type models:KeyPressStep}">
+                                        <StackPanel>
+                                            <TextBlock Text="Propriedades - Pressionar Teclas" FontSize="14" FontWeight="Bold" Margin="0,0,0,20"/>
+                                            <TextBlock Text="Label:" Margin="0,0,0,5" FontWeight="Bold"/>
+                                            <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+
+                                            <TextBlock Text="Teclas (separadas por +):" Margin="0,0,0,5" FontWeight="Bold"/>
+                                            <TextBox Text="{Binding Keys, Converter={StaticResource KeysListConverter}, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+                                            <TextBlock Foreground="#666" Text="Ex: Ctrl+Tab, Enter, Shift+A" FontSize="10" Margin="0,0,0,15"/>
+                                            <TextBlock Foreground="#666" Text="Teclas válidas: Enter, Tab, Escape, Shift, Ctrl, Alt, Delete, Backspace, Home, End, Insert, PageUp, PageDown, Up, Down, Left, Right" FontSize="9"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ContentControl.Resources>
+                            </ContentControl>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- Tab 1: CSV -->
+            <TabItem Header="📊 CSV">
+                <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="15">
+                        <TextBlock Text="{Binding CsvLoaderViewModel.StatusMessage}" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBlock Text="{Binding CsvLoaderViewModel.RowCountText}" Foreground="#666"/>
+                    </StackPanel>
+
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding CsvLoaderViewModel.Rows}" AutoGenerateColumns="True" IsReadOnly="True" Margin="15"/>
+                </Grid>
+            </TabItem>
+
+            <!-- Tab 2: Execução -->
+            <TabItem Header="⚙️ Executar">
+                <Grid Background="White" Margin="15">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="{Binding ExecutionViewModel.StatusMessage}" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                    <Grid Grid.Row="1" Margin="0,0,0,15">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-
-                        <TextBlock Text="Propriedades do Step Selecionado" FontSize="12" FontWeight="Bold"/>
-
-                        <StackPanel Grid.Row="1" Margin="0,10,0,0">
-                            <TextBlock Text="Tipo:" FontSize="11" Margin="0,0,0,3"/>
-                            <ComboBox Padding="8,5" ItemsSource="{Binding StepTypes}" Background="White" BorderBrush="#D0D0D0" Height="30"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="2" Margin="0,10,0,0">
-                            <TextBlock Text="Label (opcional):" FontSize="11" Margin="0,0,0,3"/>
-                            <TextBox Padding="8,5" Background="White" BorderBrush="#D0D0D0" Height="30"/>
-                        </StackPanel>
-
-                        <ScrollViewer Grid.Row="3" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto">
-                            <TextBlock Text="[Propriedades específicas do tipo de step aparecerão aqui]" Foreground="#666666"/>
-                        </ScrollViewer>
+                        <ProgressBar Height="20" Value="{Binding ExecutionViewModel.ProgressValue}" Margin="0,0,0,5"/>
+                        <TextBlock Text="{Binding ExecutionViewModel.CurrentStepLabel}" Foreground="#666"/>
                     </Grid>
-                </TabItem>
 
-                <TabItem Header="Visualizar CSV" Background="White">
-                    <DataGrid Margin="15" Background="White" BorderBrush="#D0D0D0" AutoGenerateColumns="True" IsReadOnly="True"/>
-                </TabItem>
-
-                <TabItem Header="Gravador" Background="White">
-                    <StackPanel Padding="15" VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <Button Content="▶ Iniciar Gravação" Padding="15,10" Background="#0E7C0E" Foreground="White" FontSize="14" Width="200" Height="50" Margin="0,0,0,20"/>
-                        <TextBlock Text="Clique no botão acima e realize os cliques no sistema alvo." TextAlignment="Center" Foreground="#666666"/>
-                        <TextBlock Text="Pressione ESC ou clique no botão para parar a gravação." TextAlignment="Center" Foreground="#666666" Margin="0,10,0,0"/>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,15">
+                        <Button Content="⏸️ Pausar" Padding="10,5" Margin="0,0,10,0" IsEnabled="{Binding ExecutionViewModel.IsExecuting}" Command="{Binding ExecutionViewModel.PauseCommand}"/>
+                        <Button Content="▶️ Retomar" Padding="10,5" Margin="0,0,10,0" IsEnabled="{Binding ExecutionViewModel.IsPaused}" Command="{Binding ExecutionViewModel.ResumeCommand}"/>
+                        <Button Content="⏹️ Parar" Padding="10,5" IsEnabled="{Binding ExecutionViewModel.IsExecuting}" Command="{Binding ExecutionViewModel.StopCommand}"/>
+                        <TextBlock Margin="30,0,0,0" VerticalAlignment="Center">
+                            <Run Text="✓ Sucesso: "/><Run Text="{Binding ExecutionViewModel.SuccessCount}" FontWeight="Bold"/>
+                            <Run Text=" | ✗ Erro: "/><Run Text="{Binding ExecutionViewModel.FailureCount}" FontWeight="Bold"/>
+                        </TextBlock>
                     </StackPanel>
-                </TabItem>
 
-                <TabItem Header="Execução" Background="White">
-                    <StackPanel Padding="15">
-                        <TextBlock Text="Status:" FontSize="12" FontWeight="Bold" Margin="0,0,0,10"/>
-                        <TextBlock Text="Aguardando CSV carregado..." Foreground="#666666" Margin="0,0,0,20"/>
-                        <ProgressBar Height="20" Value="0" Margin="0,0,0,20" Background="#F0F0F0" Foreground="#107C10"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Button Content="Pausar" Padding="10,5" Margin="0,0,10,0" Background="#FFB900" Foreground="White" IsEnabled="False"/>
-                            <Button Content="Retomar" Padding="10,5" Margin="0,0,10,0" Background="#FFB900" Foreground="White" IsEnabled="False"/>
-                            <Button Content="Parar" Padding="10,5" Background="#D13438" Foreground="White" IsEnabled="False"/>
-                        </StackPanel>
-                        <TextBlock Text="Log de Execução:" FontSize="12" FontWeight="Bold" Margin="0,20,0,10"/>
-                        <ListBox Height="300" Background="#F8F8F8" BorderBrush="#D0D0D0"/>
-                    </StackPanel>
-                </TabItem>
-            </TabControl>
-        </Grid>
+                    <ListBox Grid.Row="3" ItemsSource="{Binding ExecutionViewModel.ExecutionLog}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DisplayText}" Foreground="{Binding Success, Converter={StaticResource BoolToColorConverter}}"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </TabItem>
+        </TabControl>
     </Grid>
 </Window>
