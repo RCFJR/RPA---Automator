@@ -1,0 +1,94 @@
+﻿<UserControl x:Class="RPA.App.Views.ShellCommandEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="White">
+    <Grid Margin="20">
+        <StackPanel Orientation="Vertical">
+            <TextBlock Text="Editor de Comandos Shell"
+                       FontSize="18"
+                       FontWeight="Bold"
+                       Margin="0,0,0,20" />
+
+            <!-- Default Delay -->
+            <TextBlock Text="Delay Padrão (ms):"
+                       FontWeight="Bold"
+                       Margin="0,0,0,5" />
+            <TextBox Name="DefaultDelayInput"
+                     Text="1000"
+                     Padding="8,5"
+                     Margin="0,0,0,20" />
+
+            <!-- Commands List -->
+            <TextBlock Text="Comandos:"
+                       FontWeight="Bold"
+                       Margin="0,0,0,10" />
+
+            <ItemsControl Name="CommandsList"
+                          Margin="0,0,0,10">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderBrush="#DDD"
+                                BorderThickness="1"
+                                Padding="10"
+                                Margin="0,0,0,8">
+                            <StackPanel Orientation="Vertical">
+                                <!-- Shell Type -->
+                                <TextBlock Text="Shell:"
+                                           FontSize="11"
+                                           Foreground="#666"
+                                           Margin="0,0,0,3" />
+                                <ComboBox Name="ShellTypeCombo"
+                                          Padding="5,3"
+                                          Margin="0,0,0,8">
+                                    <ComboBoxItem Content="CMD (cmd.exe)" />
+                                    <ComboBoxItem Content="PowerShell (powershell.exe)" />
+                                    <ComboBoxItem Content="Bash (bash.exe)" />
+                                </ComboBox>
+
+                                <!-- Command -->
+                                <TextBlock Text="Comando:"
+                                           FontSize="11"
+                                           Foreground="#666"
+                                           Margin="0,0,0,3" />
+                                <TextBox Name="CommandInput"
+                                         Padding="5,3"
+                                         Margin="0,0,0,8" />
+
+                                <!-- Delay -->
+                                <TextBlock Text="Delay individual (ms, deixe vazio para usar padrão):"
+                                           FontSize="11"
+                                           Foreground="#666"
+                                           Margin="0,0,0,3" />
+                                <TextBox Name="DelayInput"
+                                         Padding="5,3"
+                                         Margin="0,0,0,8" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Buttons -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                <Button Content="➕ Adicionar Comando"
+                        Padding="10,8"
+                        Margin="0,0,10,0"
+                        Background="#0078D4"
+                        Foreground="White"
+                        Name="AddCommandButton"
+                        Click="AddCommandButton_Click" />
+                <Button Content="🗑️ Remover Último"
+                        Padding="10,8"
+                        Background="#D13438"
+                        Foreground="White"
+                        Name="RemoveCommandButton"
+                        Click="RemoveCommandButton_Click" />
+            </StackPanel>
+
+            <TextBlock Text="{Binding StatusMessage}"
+                       Foreground="#666"
+                       FontSize="12"
+                       TextWrapping="Wrap" />
+        </StackPanel>
+    </Grid>
+</UserControl>

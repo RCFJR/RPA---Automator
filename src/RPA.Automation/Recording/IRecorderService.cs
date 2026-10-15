@@ -1,7 +1,11 @@
+using RPA.Core.Models;
+
 namespace RPA.Automation.Recording;
 
 public interface IRecorderService
 {
-    Task<List<RecordedAction>> RecordAsync(TimeSpan timeout, CancellationToken ct);
-    event EventHandler<RecordedAction>? ActionRecorded;
+    bool IsRecording { get; }
+    void Start();
+    Task<RecordedSequenceStep> StopAsync(CancellationToken ct = default);
+    event EventHandler<Step>? StepCaptured;
 }

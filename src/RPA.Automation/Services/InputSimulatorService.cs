@@ -133,26 +133,6 @@ public class InputSimulatorService : IInputSimulator
 
     private KeyCode ParseKeyCode(string key)
     {
-        return key.ToUpperInvariant() switch
-        {
-            "ENTER" => KeyCode.VcEnter,
-            "TAB" => KeyCode.VcTab,
-            "ESCAPE" => KeyCode.VcEscape,
-            "SHIFT" => KeyCode.VcLeftShift,
-            "CTRL" => KeyCode.VcLeftControl,
-            "ALT" => KeyCode.VcLeftAlt,
-            "DELETE" => KeyCode.VcDelete,
-            "BACKSPACE" => KeyCode.VcBackspace,
-            "HOME" => KeyCode.VcHome,
-            "END" => KeyCode.VcEnd,
-            "INSERT" => KeyCode.VcInsert,
-            "PAGEUP" => KeyCode.VcPageUp,
-            "PAGEDOWN" => KeyCode.VcPageDown,
-            "UP" => KeyCode.VcUp,
-            "DOWN" => KeyCode.VcDown,
-            "LEFT" => KeyCode.VcLeft,
-            "RIGHT" => KeyCode.VcRight,
-            _ => KeyCode.VcUndefined
-        };
+        return KeyCodeNameMap.ToKeyCode(key);
     }
 }

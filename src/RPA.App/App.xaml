@@ -2,8 +2,11 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:RPA.App"
+             xmlns:converters="clr-namespace:RPA.App.Converters"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <converters:BoolToColorConverter x:Key="BoolToColorConverter"/>
+        <converters:KeysListConverter x:Key="KeysListConverter"/>
     </Application.Resources>
 </Application>
+

@@ -1,0 +1,106 @@
+# Shell Command Step - Exemplos de Uso
+
+## 1. CMD (Padrão)
+Comandos compatíveis com Command Prompt do Windows
+
+Exemplos:
+- echo Olá Mundo
+- dir C:\
+- mkdir C:\teste
+- del C:\teste\arquivo.txt
+- copy origem.txt destino.txt
+- type arquivo.txt
+
+## 2. PowerShell
+Scripting mais poderoso com acesso a .NET
+
+Exemplos:
+- Write-Host "Olá Mundo"
+- Get-ChildItem -Path C:\ -Recurse
+- New-Item -ItemType Directory -Path C:\teste
+- Remove-Item -Path C:\teste\arquivo.txt
+- Copy-Item -Path origem.txt -Destination destino.txt
+- Get-Content arquivo.txt
+- Get-Process | Where-Object {$_.Name -like "*dotnet*"}
+- [System.Diagnostics.FileVersionInfo]::GetVersionInfo("C:\Windows\System32\notepad.exe").ProductVersion
+
+## 3. Bash
+Para scripts Unix/Linux ou WSL
+
+Exemplos:
+- echo "Olá Mundo"
+- ls -la /home
+- mkdir teste
+- rm teste/arquivo.txt
+- cp origem.txt destino.txt
+- cat arquivo.txt
+- grep pattern arquivo.txt
+- find . -name "*.txt"
+
+## Exemplo Completo de Flow
+
+Delay Padrão: 500ms
+
+Comando 1:
+  Shell: CMD
+  Comando: echo Iniciando teste
+  Delay: (vazio - usa padrão 500ms)
+
+Comando 2:
+  Shell: PowerShell
+  Comando: [System.DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss")
+  Delay: (vazio - usa padrão 500ms)
+
+Comando 3:
+  Shell: Bash
+  Comando: echo "Teste WSL"
+  Delay: 2000 (override - aguarda 2 segundos)
+
+Comando 4:
+  Shell: CMD
+  Comando: echo Teste concluído!
+  Delay: (vazio - usa padrão 500ms)
+
+## Logging
+
+Cada comando registra no execution log:
+[EXEC]     [1/4] echo Iniciando teste
+[EXEC]       Output:
+Iniciando teste
+[EXEC]       Aguardando 500ms antes do próximo comando...
+
+[EXEC]     [2/4] [System.DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss")
+[EXEC]       Output:
+2026-08-23 14:30:45
+[EXEC]       Aguardando 500ms antes do próximo comando...
+
+[EXEC]     [3/4] echo "Teste WSL"
+[EXEC]       Output:
+Teste WSL
+[EXEC]       Aguardando 2000ms antes do próximo comando...
+
+[EXEC]     [4/4] echo Teste concluído!
+[EXEC]       Output:
+Teste concluído!
+[EXEC]   ShellCommandStep concluído com sucesso
+
+## Notas Importantes
+
+1. PowerShell:
+   - Usa -NoProfile para iniciar mais rápido
+   - Usa -Command para executar o comando
+   - Caracteres especiais são escapados automaticamente
+
+2. Bash:
+   - Requer WSL (Windows Subsystem for Linux) instalado
+   - Use bash.exe (disponível em WSL)
+   - Caminho dos arquivos pode precisar de conversão (/mnt/c em vez de C:)
+
+3. CMD:
+   - Mais simples e rápido
+   - Compatível com scripts batch
+   - Não suporta cmdlets PowerShell
+
+4. Caracteres Especiais:
+   - Aspas são escapadas automaticamente
+   - Variáveis de ambiente funcionam normalmente ($env:PATH em PowerShell, %PATH% em CMD)

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using RPA.App.Models;
 using RPA.Automation;
 using RPA.Automation.Recording;
 using RPA.Core.Models;
@@ -16,6 +17,10 @@ public partial class FlowEditorViewModel : ObservableObject
     private readonly IFlowRepository _flowRepository;
     private readonly IPlaceholderResolver _placeholderResolver;
     private readonly IPositionCaptureService _positionCaptureService;
+    private readonly IRecorderService _recorderService;
+    private RecordingOverlayWindow? _recordingOverlay;
+    private RecordingOverlayViewModel? _recordingOverlayViewModel;
+    private WindowState? _preRecordingWindowState;
 
     [ObservableProperty]
     private Flow currentFlow = new();
@@ -45,7 +50,9 @@ public partial class FlowEditorViewModel : ObservableObject
         "Wait",
         "Click",
         "TypeText",
-        "KeyPress"
+        "KeyPress",
+        "SetVariable",
+        "ShellCommand"
     };
 
     [ObservableProperty]
@@ -54,19 +61,47 @@ public partial class FlowEditorViewModel : ObservableObject
     [ObservableProperty]
     private int repeatCount = 1;
 
+    [ObservableProperty]
+    private bool isRecording = false;
+
+    [ObservableProperty]
+    private Step? selectedSubStep;
+
+    [ObservableProperty]
+    private int selectedSubStepIndex = -1;
+
+    [ObservableProperty]
+    private ObservableCollection<GlobalVariable> globalVariables = new();
+
+    [ObservableProperty]
+    private string newVariableName = string.Empty;
+
+    [ObservableProperty]
+    private string newVariableValue = string.Empty;
+
     private List<string> _availableColumns = new();
 
-    public FlowEditorViewModel(IFlowRepository flowRepository, IPlaceholderResolver placeholderResolver, IPositionCaptureService positionCaptureService)
+    public Step? EditingStep => SelectedSubStep ?? SelectedStep;
+
+    public FlowEditorViewModel(IFlowRepository flowRepository, IPlaceholderResolver placeholderResolver, IPositionCaptureService positionCaptureService, IRecorderService recorderService)
     {
         _flowRepository = flowRepository ?? throw new ArgumentNullException(nameof(flowRepository));
         _placeholderResolver = placeholderResolver ?? throw new ArgumentNullException(nameof(placeholderResolver));
         _positionCaptureService = positionCaptureService ?? throw new ArgumentNullException(nameof(positionCaptureService));
+        _recorderService = recorderService ?? throw new ArgumentNullException(nameof(recorderService));
         CreateNewFlow();
     }
 
     partial void OnSelectedIndexChanged(int value)
     {
         SelectedStep = (value >= 0 && value < Steps.Count) ? Steps[value] : null;
+        SelectedSubStepIndex = -1;
+    }
+
+    partial void OnSelectedSubStepIndexChanged(int value)
+    {
+        var subSteps = (SelectedStep as RecordedSequenceStep)?.RecordedSteps;
+        SelectedSubStep = (subSteps != null && value >= 0 && value < subSteps.Count) ? subSteps[value] : null;
     }
 
     partial void OnUsesCsvChanged(bool value)
@@ -101,11 +136,13 @@ public partial class FlowEditorViewModel : ObservableObject
         {
             Name = "Novo Fluxo",
             Steps = new List<Step>(),
-            ExecutionSource = new RepeatExecutionSource(1)
+            ExecutionSource = new RepeatExecutionSource(1),
+            GlobalVariables = new Dictionary<string, string>()
         };
         FlowName = CurrentFlow.Name;
         TargetWindowTitle = CurrentFlow.TargetWindowTitle ?? string.Empty;
         Steps.Clear();
+        GlobalVariables.Clear();
         SelectedIndex = -1;
         UsesCsv = true;
         RepeatCount = 1;
@@ -127,12 +164,19 @@ public partial class FlowEditorViewModel : ObservableObject
                 ? CurrentFlow.ExecutionSource ?? new CsvExecutionSource(new List<CsvRow>())
                 : new RepeatExecutionSource(RepeatCount);
 
+            var globalVariablesDict = new Dictionary<string, string>();
+            foreach (var gv in GlobalVariables)
+            {
+                globalVariablesDict[gv.Name] = gv.Value;
+            }
+
             CurrentFlow = CurrentFlow with
             {
                 Name = FlowName,
                 TargetWindowTitle = TargetWindowTitle,
                 Steps = Steps.ToList(),
-                ExecutionSource = executionSource
+                ExecutionSource = executionSource,
+                GlobalVariables = globalVariablesDict
             };
 
             var fileName = $"{FlowName.Replace(" ", "_")}.rpaflow.json";
@@ -140,6 +184,7 @@ public partial class FlowEditorViewModel : ObservableObject
 
             await _flowRepository.SaveAsync(CurrentFlow, filePath);
             StatusMessage = $"✓ Fluxo '{FlowName}' salvo com sucesso!";
+            System.Windows.MessageBox.Show($"Fluxo '{FlowName}' foi salvo com sucesso em:\n{filePath}", "Fluxo Salvo", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
@@ -165,9 +210,20 @@ public partial class FlowEditorViewModel : ObservableObject
                 FlowName = flow.Name;
                 TargetWindowTitle = flow.TargetWindowTitle ?? string.Empty;
                 Steps.Clear();
+                GlobalVariables.Clear();
+
                 foreach (var step in flow.Steps)
                 {
                     Steps.Add(step);
+                }
+
+                foreach (var gv in flow.GlobalVariables)
+                {
+                    GlobalVariables.Add(new Models.GlobalVariable
+                    {
+                        Name = gv.Key,
+                        Value = gv.Value
+                    });
                 }
 
                 if (flow.ExecutionSource is RepeatExecutionSource repeatSource)
@@ -201,6 +257,8 @@ public partial class FlowEditorViewModel : ObservableObject
             "Click" => new ClickStep { X = 0, Y = 0, Label = "Clique", Origin = CoordinateOrigin.Screen },
             "TypeText" => new TypeTextStep { Template = "{{Coluna}}", Label = "Digitar Texto", Mode = TypeMode.DirectInput },
             "KeyPress" => new KeyPressStep { Keys = new List<string> { "Tab" }, Label = "Pressionar Tecla" },
+            "SetVariable" => new SetVariableStep { Label = "Atribuir Variável", VariableName = "variavel", Value = "valor" },
+            "ShellCommand" => new ShellCommandStep { Label = "Comando Shell", DefaultDelayMs = 1000, Commands = new() },
             _ => new WaitStep { Label = "Novo Step" }
         };
 
@@ -241,9 +299,39 @@ public partial class FlowEditorViewModel : ObservableObject
     }
 
     [RelayCommand]
+    public void AddGlobalVariable()
+    {
+        if (string.IsNullOrWhiteSpace(NewVariableName))
+        {
+            StatusMessage = "Nome da variável é obrigatório";
+            return;
+        }
+
+        GlobalVariables.Add(new Models.GlobalVariable
+        {
+            Name = NewVariableName,
+            Value = NewVariableValue
+        });
+
+        NewVariableName = string.Empty;
+        NewVariableValue = string.Empty;
+        StatusMessage = "✅ Variável global adicionada";
+    }
+
+    [RelayCommand]
+    public void RemoveGlobalVariable(Models.GlobalVariable? variable)
+    {
+        if (variable == null)
+            return;
+
+        GlobalVariables.Remove(variable);
+        StatusMessage = "🗑️ Variável global removida";
+    }
+
+    [RelayCommand]
     public async Task CapturePosition()
     {
-        if (SelectedStep is not ClickStep clickStep)
+        if (EditingStep is not ClickStep clickStep)
         {
             StatusMessage = "Selecione um step de tipo 'Click' primeiro";
             return;
@@ -289,7 +377,7 @@ public partial class FlowEditorViewModel : ObservableObject
     [RelayCommand]
     public void InsertPlaceholder(string? columnName)
     {
-        if (string.IsNullOrWhiteSpace(columnName) || SelectedStep is not TypeTextStep typeTextStep)
+        if (string.IsNullOrWhiteSpace(columnName) || EditingStep is not TypeTextStep typeTextStep)
         {
             StatusMessage = "⚠️ Selecione um TypeText step e escolha uma coluna";
             return;
@@ -297,6 +385,72 @@ public partial class FlowEditorViewModel : ObservableObject
 
         typeTextStep.Template += $"{{{columnName}}}";
         StatusMessage = $"✓ Placeholder {{{columnName}}} inserido";
+    }
+
+    [RelayCommand]
+    public void StartRecording()
+    {
+        if (IsRecording) return;
+
+        var mainWindow = Application.Current.MainWindow;
+        _preRecordingWindowState = mainWindow?.WindowState;
+        if (mainWindow != null)
+            mainWindow.WindowState = WindowState.Minimized;
+
+        _recordingOverlayViewModel = new RecordingOverlayViewModel();
+        _recordingOverlayViewModel.StopRequested += async (_, _) => await StopRecordingInternal();
+        _recordingOverlay = new RecordingOverlayWindow(_recordingOverlayViewModel);
+        _recordingOverlay.Show();
+
+        _recorderService.StepCaptured += OnStepCaptured;
+        _recorderService.Start();
+        IsRecording = true;
+        StatusMessage = "🔴 Gravando... interaja com a janela alvo e clique em Parar quando terminar.";
+    }
+
+    [RelayCommand]
+    public async Task RequestStopRecording()
+    {
+        await StopRecordingInternal();
+    }
+
+    private async Task StopRecordingInternal()
+    {
+        if (!IsRecording) return;
+
+        _recorderService.StepCaptured -= OnStepCaptured;
+        var sequenceStep = await _recorderService.StopAsync();
+        IsRecording = false;
+        _recordingOverlay?.Close();
+        _recordingOverlay = null;
+        _recordingOverlayViewModel = null;
+
+        var mainWindow = Application.Current.MainWindow;
+        if (mainWindow != null && _preRecordingWindowState.HasValue)
+        {
+            mainWindow.WindowState = _preRecordingWindowState.Value;
+            mainWindow.Activate();
+        }
+
+        if (sequenceStep.RecordedSteps.Count > 0)
+        {
+            Steps.Add(sequenceStep);
+            SelectedIndex = Steps.Count - 1;
+            StatusMessage = $"✓ Sequência gravada com {sequenceStep.RecordedSteps.Count} passo(s)";
+        }
+        else
+        {
+            StatusMessage = "⚠️ Nenhuma ação foi capturada durante a gravação.";
+        }
+    }
+
+    private void OnStepCaptured(object? sender, Step step)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            if (_recordingOverlayViewModel != null)
+                _recordingOverlayViewModel.ActionsCaptured++;
+        });
     }
 
     public void SetAvailableColumns(List<string> columns)

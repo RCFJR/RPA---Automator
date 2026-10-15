@@ -1,57 +1,310 @@
+using RPA.Automation.Services;
+using RPA.Core.Models;
+using SharpHook;
+using SharpHook.Native;
 using System.Text;
 
 namespace RPA.Automation.Recording;
 
 public class RecorderService : IRecorderService
 {
-    private readonly List<RecordedAction> _actions = new();
-    private DateTime _lastActionTime;
-    private StringBuilder? _currentTextBuffer;
-    private const int TextGroupingTimeoutMs = 1000;
+    private SimpleGlobalHook? _hook;
+    private Task? _hookRunTask;
+    private readonly List<Step> _steps = new();
+    private readonly StringBuilder _textBuffer = new();
+    private readonly HashSet<KeyCode> _heldModifiers = new();
+    private readonly object _lock = new();
 
-    public event EventHandler<RecordedAction>? ActionRecorded;
+    private long _lastActionTimestamp;
+    private long _textBufferStartTimestamp;
+    private KeyCode _suppressNextKeyTypedFor = KeyCode.VcUndefined;
 
-    public async Task<List<RecordedAction>> RecordAsync(TimeSpan timeout, CancellationToken ct)
+    public bool IsRecording { get; private set; }
+
+    public void Start()
     {
-        _actions.Clear();
-        _lastActionTime = DateTime.UtcNow;
-        _currentTextBuffer = new StringBuilder();
+        lock (_lock)
+        {
+            if (IsRecording) return;
 
-        // Será implementado futuramente com SharpHook completo
-        // Por enquanto, retorna lista vazia para não quebrar a compilação
-        FlushTextBuffer();
+            _steps.Clear();
+            _textBuffer.Clear();
+            _heldModifiers.Clear();
+            _suppressNextKeyTypedFor = KeyCode.VcUndefined;
+            _lastActionTimestamp = GetTimestampMs();
+            _textBufferStartTimestamp = _lastActionTimestamp;
 
-        return _actions;
+            _hook = new SimpleGlobalHook();
+            _hook.MouseClicked += OnMouseClicked;
+            _hook.KeyPressed += OnKeyPressed;
+            _hook.KeyReleased += OnKeyReleased;
+            _hook.KeyTyped += OnKeyTyped;
+
+            try
+            {
+                _hookRunTask = _hook.RunAsync();
+                IsRecording = true;
+            }
+            catch
+            {
+                _hook?.Dispose();
+                _hook = null;
+                _hookRunTask = null;
+                throw;
+            }
+        }
     }
 
-    public void AddRecordedAction(RecordedAction action)
+    public async Task<RecordedSequenceStep> StopAsync(CancellationToken ct = default)
     {
-        var timeSinceLastAction = (DateTime.UtcNow - _lastActionTime).TotalMilliseconds;
+        if (!IsRecording) return new RecordedSequenceStep();
 
-        if (timeSinceLastAction > TextGroupingTimeoutMs && action.Type == ActionType.KeyTyped)
+        IsRecording = false;
+        _hook?.Dispose();
+        _hook = null;
+
+        if (_hookRunTask != null)
+        {
+            try
+            {
+                await _hookRunTask;
+            }
+            catch
+            {
+                // Hook foi disposado, erro é esperado
+            }
+        }
+        _hookRunTask = null;
+
+        lock (_lock)
         {
             FlushTextBuffer();
+
+            // Remove a última ação (clique no botão de parar gravação)
+            if (_steps.Count > 0)
+            {
+                _steps.RemoveAt(_steps.Count - 1);
+            }
+
+            var steps = new RecordedSequenceStep
+            {
+                RecordedSteps = new List<Step>(_steps)
+            };
+            _steps.Clear();
+            return steps;
+        }
+    }
+
+    private void OnMouseClicked(object? sender, SharpHook.MouseHookEventArgs e)
+    {
+        lock (_lock)
+        {
+            if (!IsRecording) return;
+
+            FlushTextBuffer();
+            var now = GetTimestampMs();
+            MaybeInsertWait(now);
+
+            var button = e.Data.Button switch
+            {
+                SharpHook.Native.MouseButton.Button1 => MouseButtonKind.Left,
+                SharpHook.Native.MouseButton.Button2 => MouseButtonKind.Right,
+                SharpHook.Native.MouseButton.Button3 => MouseButtonKind.Middle,
+                _ => MouseButtonKind.Left
+            };
+
+            var kind = e.Data.Clicks >= 2 ? ClickKind.Double : ClickKind.Single;
+
+            var (x, y, origin) = ResolveCoordinates(e.Data.X, e.Data.Y);
+
+            var clickStep = new ClickStep
+            {
+                Label = $"Clique {(kind == ClickKind.Double ? "duplo" : "simples")}",
+                X = x,
+                Y = y,
+                Button = button,
+                Kind = kind,
+                Origin = origin
+            };
+
+            _steps.Add(clickStep);
+            _lastActionTimestamp = now;
+            StepCaptured?.Invoke(this, clickStep);
+        }
+    }
+
+    private void OnKeyPressed(object? sender, SharpHook.KeyboardHookEventArgs e)
+    {
+        lock (_lock)
+        {
+            if (!IsRecording) return;
+
+            var keyCode = e.Data.KeyCode;
+
+            if (IsModifier(keyCode))
+            {
+                _heldModifiers.Add(keyCode);
+                return;
+            }
+
+            // Se há modificadores (Ctrl, Alt, Shift) OU é tecla especial, gera KeyPressStep
+            if (IsSpecialKey(keyCode) || _heldModifiers.Count > 0)
+            {
+                FlushTextBuffer();
+                var now = GetTimestampMs();
+                GenerateKeyPressStep(keyCode, now);
+            }
+        }
+    }
+
+    private void OnKeyReleased(object? sender, SharpHook.KeyboardHookEventArgs e)
+    {
+        lock (_lock)
+        {
+            if (!IsRecording) return;
+
+            var keyCode = e.Data.KeyCode;
+
+            if (IsModifier(keyCode))
+            {
+                _heldModifiers.Remove(keyCode);
+            }
+        }
+    }
+
+    private void OnKeyTyped(object? sender, SharpHook.KeyboardHookEventArgs e)
+    {
+        lock (_lock)
+        {
+            if (!IsRecording) return;
+
+            if (e.Data.KeyChar == char.MaxValue) // evento malformado
+                return;
+
+            // Supressão para não duplicar KeyTyped que vem de teclas especiais
+            if (_suppressNextKeyTypedFor != KeyCode.VcUndefined)
+            {
+                _suppressNextKeyTypedFor = KeyCode.VcUndefined;
+                return;
+            }
+
+            if (char.IsControl(e.Data.KeyChar))
+                return;
+
+            _textBuffer.Append(e.Data.KeyChar);
+            _textBufferStartTimestamp = GetTimestampMs();
+        }
+    }
+
+    private void GenerateKeyPressStep(KeyCode keyCode, long timestamp)
+    {
+        MaybeInsertWait(timestamp);
+
+        var keys = new List<string>();
+
+        foreach (var modifier in _heldModifiers.OrderBy(k => k.ToString()))
+        {
+            var name = KeyCodeNameMap.ToName(modifier);
+            if (name != null) keys.Add(name);
         }
 
-        _actions.Add(action);
-        ActionRecorded?.Invoke(this, action);
-        _lastActionTime = DateTime.UtcNow;
+        var keyName = KeyCodeNameMap.ToName(keyCode);
+        if (keyName != null) keys.Add(keyName);
+
+        if (keys.Count > 0)
+        {
+            var keyPressStep = new KeyPressStep
+            {
+                Label = $"Teclas: {string.Join("+", keys)}",
+                Keys = keys
+            };
+
+            _steps.Add(keyPressStep);
+            _lastActionTimestamp = timestamp;
+            StepCaptured?.Invoke(this, keyPressStep);
+        }
+
+        _suppressNextKeyTypedFor = keyCode;
     }
 
     private void FlushTextBuffer()
     {
-        if (_currentTextBuffer != null && _currentTextBuffer.Length > 0)
+        if (_textBuffer.Length == 0) return;
+
+        var text = _textBuffer.ToString();
+        _textBuffer.Clear();
+
+        var typeTextStep = new TypeTextStep
         {
-            var action = new RecordedAction
+            Label = $"Digitar: {(text.Length > 20 ? text.Substring(0, 20) + "..." : text)}",
+            Template = text,
+            Mode = TypeMode.DirectInput
+        };
+
+        _steps.Add(typeTextStep);
+        _lastActionTimestamp = _textBufferStartTimestamp;
+        StepCaptured?.Invoke(this, typeTextStep);
+    }
+
+    private void MaybeInsertWait(long currentTimestamp)
+    {
+        var gapMs = currentTimestamp - _lastActionTimestamp;
+
+        if (gapMs >= 150)
+        {
+            var roundedMs = ((gapMs + 25) / 50) * 50;
+
+            var waitStep = new WaitStep
             {
-                Timestamp = _lastActionTime,
-                Type = ActionType.KeyTyped,
-                Text = _currentTextBuffer.ToString()
+                Label = $"Aguardar {roundedMs} ms",
+                Milliseconds = (int)roundedMs
             };
 
-            _actions.Add(action);
-            ActionRecorded?.Invoke(this, action);
-            _currentTextBuffer.Clear();
+            _steps.Add(waitStep);
+            StepCaptured?.Invoke(this, waitStep);
         }
     }
+
+    private (int X, int Y, CoordinateOrigin Origin) ResolveCoordinates(int screenX, int screenY)
+    {
+        var hwnd = Win32Helper.GetWindowAtPoint(screenX, screenY);
+        if (hwnd == IntPtr.Zero)
+            return (screenX, screenY, CoordinateOrigin.Screen);
+
+        var rootHwnd = Win32Helper.GetRootWindow(hwnd);
+        if (rootHwnd == IntPtr.Zero)
+            return (screenX, screenY, CoordinateOrigin.Screen);
+
+        Win32Helper.GetWindowRectHelper(rootHwnd, out var rect);
+
+        var windowX = screenX - rect.Left;
+        var windowY = screenY - rect.Top;
+
+        return (windowX, windowY, CoordinateOrigin.WindowRelative);
+    }
+
+    private static bool IsModifier(KeyCode keyCode) => keyCode switch
+    {
+        KeyCode.VcLeftShift or KeyCode.VcRightShift or
+        KeyCode.VcLeftControl or KeyCode.VcRightControl or
+        KeyCode.VcLeftAlt or KeyCode.VcRightAlt or
+        KeyCode.VcLeftMeta or KeyCode.VcRightMeta => true,
+        _ => false
+    };
+
+    private static bool IsSpecialKey(KeyCode keyCode) => keyCode switch
+    {
+        KeyCode.VcEnter or KeyCode.VcNumPadEnter or
+        KeyCode.VcTab or KeyCode.VcEscape or
+        KeyCode.VcBackspace or KeyCode.VcDelete or
+        KeyCode.VcInsert or KeyCode.VcHome or KeyCode.VcEnd or
+        KeyCode.VcPageUp or KeyCode.VcPageDown or
+        KeyCode.VcUp or KeyCode.VcDown or
+        KeyCode.VcLeft or KeyCode.VcRight => true,
+        _ => false
+    };
+
+    private static long GetTimestampMs() => Environment.TickCount64;
+
+    public event EventHandler<Step>? StepCaptured;
 }

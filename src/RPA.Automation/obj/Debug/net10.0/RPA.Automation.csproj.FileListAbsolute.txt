@@ -1,5 +1,0 @@
-C:\Projects\RPA\src\RPA.Automation\obj\Debug\net10.0\RPA.Automation.csproj.AssemblyReference.cache
-C:\Projects\RPA\src\RPA.Automation\obj\Debug\net10.0\RPA.Automation.GeneratedMSBuildEditorConfig.editorconfig
-C:\Projects\RPA\src\RPA.Automation\obj\Debug\net10.0\RPA.Automation.AssemblyInfoInputs.cache
-C:\Projects\RPA\src\RPA.Automation\obj\Debug\net10.0\RPA.Automation.AssemblyInfo.cs
-C:\Projects\RPA\src\RPA.Automation\obj\Debug\net10.0\RPA.Automation.csproj.CoreCompileInputs.cache

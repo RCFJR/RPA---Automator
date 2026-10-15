@@ -21,6 +21,9 @@ public partial class MainViewModel : ObservableObject
     private ExecutionViewModel executionViewModel;
 
     [ObservableProperty]
+    private ConditionalEditorViewModel conditionalEditorViewModel;
+
+    [ObservableProperty]
     private int selectedTabIndex = 0;
 
     public MainViewModel()
@@ -29,16 +32,21 @@ public partial class MainViewModel : ObservableObject
         var csvLoader = new CsvLoader();
         var placeholderResolver = new PlaceholderResolver();
         var flowRepository = new FlowRepository();
+        var snapshotRepository = new SnapshotRepository();
         var inputSimulator = new InputSimulatorService();
         var windowActivator = new WindowActivatorService();
-        var stepExecutor = new StepExecutor(inputSimulator, windowActivator, placeholderResolver);
+        var screenCaptureService = new ScreenCaptureService();
+        var imageComparisonService = new ImageComparisonService();
+        var stepExecutor = new StepExecutor(inputSimulator, windowActivator, placeholderResolver, screenCaptureService, imageComparisonService, snapshotRepository);
         var flowExecutionEngine = new FlowExecutionEngine(stepExecutor);
         var positionCaptureService = new PositionCaptureService();
+        var recorderService = new RecorderService();
 
         // Criar ViewModels
         CsvLoaderViewModel = new CsvLoaderViewModel(csvLoader);
-        FlowEditorViewModel = new FlowEditorViewModel(flowRepository, placeholderResolver, positionCaptureService);
+        FlowEditorViewModel = new FlowEditorViewModel(flowRepository, placeholderResolver, positionCaptureService, recorderService);
         ExecutionViewModel = new ExecutionViewModel(flowExecutionEngine, stepExecutor);
+        ConditionalEditorViewModel = new ConditionalEditorViewModel(snapshotRepository, screenCaptureService);
     }
 
     [RelayCommand]

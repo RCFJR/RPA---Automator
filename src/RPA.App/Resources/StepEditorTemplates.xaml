@@ -1,0 +1,186 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:helpers="clr-namespace:RPA.App.Helpers"
+                    xmlns:models="clr-namespace:RPA.Core.Models;assembly=RPA.Core">
+
+    <!-- Template para ActivateWindowStep -->
+    <DataTemplate DataType="{x:Type models:ActivateWindowStep}">
+        <StackPanel>
+            <TextBlock Text="Propriedades - Ativar Janela" FontSize="14" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Text="Label:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+            <TextBlock Text="Título da Janela (contém):" Margin="0,0,0,5" FontWeight="Bold"/>
+            <TextBox Text="{Binding WindowTitleContains, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15" TextWrapping="Wrap" MinHeight="60"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Template para WaitStep -->
+    <DataTemplate DataType="{x:Type models:WaitStep}">
+        <StackPanel>
+            <TextBlock Text="Propriedades - Aguardar" FontSize="14" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Text="Label:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+            <TextBlock Text="Milissegundos:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <TextBox Text="{Binding Milliseconds, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+            <TextBlock Foreground="#666" Text="Ex: 1000 = 1 segundo" FontSize="10"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Template para ClickStep -->
+    <DataTemplate DataType="{x:Type models:ClickStep}">
+        <StackPanel>
+            <TextBlock Text="Propriedades - Clique" FontSize="14" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Text="Label:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+
+            <Grid Margin="0,0,0,15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                    <TextBlock Text="X:" Margin="0,0,0,5" FontWeight="Bold"/>
+                    <TextBox Text="{Binding X, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                    <TextBlock Text="Y:" Margin="0,0,0,5" FontWeight="Bold"/>
+                    <TextBox Text="{Binding Y, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+            </Grid>
+
+            <Button Content="🎯 Capturar Posição" Padding="10,8" Margin="0,0,0,15" Background="#FFB900" Foreground="White" Command="{Binding DataContext.FlowEditorViewModel.CapturePositionCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+
+            <TextBlock Text="Botão:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <ComboBox ItemsSource="{x:Static helpers:EnumSource.MouseButtonKinds}" SelectedItem="{Binding Button, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+
+            <TextBlock Text="Tipo:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <ComboBox ItemsSource="{x:Static helpers:EnumSource.ClickKinds}" SelectedItem="{Binding Kind, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+
+            <TextBlock Text="Origem:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <ComboBox ItemsSource="{x:Static helpers:EnumSource.CoordinateOrigins}" SelectedItem="{Binding Origin, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Template para TypeTextStep -->
+    <DataTemplate DataType="{x:Type models:TypeTextStep}">
+        <StackPanel>
+            <TextBlock Text="Propriedades - Digitar Texto" FontSize="14" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Text="Label:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+
+            <TextBlock Text="Texto/Template:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <TextBox Text="{Binding Template, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" MinHeight="80" Margin="0,0,0,15"/>
+            <TextBlock Foreground="#666" Text="Use {{NomeColunaCSV}} para inserir valores do CSV" FontSize="10" Margin="0,0,0,15"/>
+
+            <Grid Margin="0,0,0,15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <ComboBox Grid.Column="0" Margin="0,0,5,0" ItemsSource="{Binding DataContext.CsvLoaderViewModel.Headers, RelativeSource={RelativeSource AncestorType=Window}}" x:Name="ColumnCombo"/>
+                <Button Grid.Column="1" Content="➕ Inserir" Padding="10,5" Background="#107C10" Foreground="White" Command="{Binding DataContext.FlowEditorViewModel.InsertPlaceholderCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding SelectedItem, ElementName=ColumnCombo}"/>
+            </Grid>
+
+            <TextBlock Text="Modo:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <ComboBox ItemsSource="{x:Static helpers:EnumSource.TypeModes}" SelectedItem="{Binding Mode, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Template para KeyPressStep -->
+    <DataTemplate DataType="{x:Type models:KeyPressStep}">
+        <StackPanel>
+            <TextBlock Text="Propriedades - Pressionar Teclas" FontSize="14" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Text="Label:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+
+            <TextBlock Text="Teclas (separadas por +):" Margin="0,0,0,5" FontWeight="Bold"/>
+            <TextBox Text="{Binding Keys, Converter={StaticResource KeysListConverter}, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+            <TextBlock Foreground="#666" Text="Ex: Ctrl+Tab, Enter, Shift+A" FontSize="10" Margin="0,0,0,15"/>
+            <TextBlock Foreground="#666" Text="Teclas válidas: Enter, Tab, Escape, Shift, Ctrl, Alt, Delete, Backspace, Home, End, Insert, PageUp, PageDown, Up, Down, Left, Right" FontSize="9"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Template para RecordedSequenceStep -->
+    <DataTemplate DataType="{x:Type models:RecordedSequenceStep}">
+        <StackPanel>
+            <TextBlock Text="Propriedades - Sequência Gravada" FontSize="14" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Text="Label:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+
+            <TextBlock Text="Ações Capturadas:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <ListBox ItemsSource="{Binding RecordedSteps}"
+                     SelectedIndex="{Binding DataContext.FlowEditorViewModel.SelectedSubStepIndex, RelativeSource={RelativeSource AncestorType=Window}}"
+                     Height="150" Margin="0,0,0,10">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel>
+                            <TextBlock Text="{Binding Label}" FontWeight="Bold" FontSize="11"/>
+                            <TextBlock Text="{Binding Summary}" Foreground="#666" FontSize="10" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <Border BorderBrush="#DDD" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                <ContentControl Content="{Binding DataContext.FlowEditorViewModel.SelectedSubStep, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            </Border>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Template para SetVariableStep -->
+    <DataTemplate DataType="{x:Type models:SetVariableStep}">
+        <StackPanel>
+            <TextBlock Text="Propriedades - Atribuir Variável" FontSize="14" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Text="Label:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+
+            <TextBlock Text="Nome da Variável:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <TextBox Text="{Binding VariableName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+            <TextBlock Foreground="#666" Text="Use sem ${} - ex: minhaVariavel" FontSize="10" Margin="0,0,0,15"/>
+
+            <TextBlock Text="Valor (pode usar {{Coluna}} ou {{outroVariable}}):" Margin="0,0,0,5" FontWeight="Bold"/>
+            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15" TextWrapping="Wrap" MinHeight="60"/>
+
+            <TextBlock Text="{Binding Summary}" Foreground="#666" FontSize="10" Margin="0,10,0,0"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Template para ShellCommandStep -->
+    <DataTemplate DataType="{x:Type models:ShellCommandStep}">
+        <StackPanel>
+            <TextBlock Text="Propriedades - Comando Shell" FontSize="14" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Text="Label:" Margin="0,0,0,5" FontWeight="Bold"/>
+            <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+
+            <TextBlock Text="Delay Padrão (ms):" FontWeight="Bold" Margin="0,0,0,5"/>
+            <TextBox Text="{Binding DefaultDelayMs, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15"/>
+
+            <TextBlock Text="Comandos:" FontWeight="Bold" Margin="0,0,0,10"/>
+            <ListBox ItemsSource="{Binding Commands}" Height="250" Margin="0,0,0,10">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderBrush="#DDD" BorderThickness="1" Padding="8" Margin="0,0,0,5">
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock Text="Shell:" FontSize="10" Foreground="#666" Margin="0,0,0,3"/>
+                                <ComboBox SelectedValuePath="Content" SelectedValue="{Binding Shell, UpdateSourceTrigger=PropertyChanged}" Padding="3" Margin="0,0,0,5" FontSize="10">
+                                    <ComboBoxItem Content="Cmd"/>
+                                    <ComboBoxItem Content="PowerShell"/>
+                                    <ComboBoxItem Content="Bash"/>
+                                </ComboBox>
+
+                                <TextBlock Text="Comando:" FontSize="10" Foreground="#666" Margin="0,0,0,3"/>
+                                <TextBox Text="{Binding Command, UpdateSourceTrigger=PropertyChanged}" Padding="5,3" Margin="0,0,0,5" FontSize="11" TextWrapping="Wrap" MinHeight="30"/>
+
+                                <TextBlock Text="Delay individual (ms):" FontSize="10" Foreground="#666" Margin="0,0,0,3"/>
+                                <TextBox Text="{Binding DelayMs, UpdateSourceTrigger=PropertyChanged}" Padding="5,3" FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <TextBlock Text="{Binding Summary}" Foreground="#666" FontSize="10" Margin="0,10,0,0"/>
+        </StackPanel>
+    </DataTemplate>
+
+</ResourceDictionary>

@@ -63,6 +63,10 @@ public partial class ExecutionViewModel : ObservableObject
         List<ExecutionResult>? results = null;
         int itemCount = 0;
 
+        var mainWindow = System.Windows.Application.Current.MainWindow;
+        if (mainWindow != null)
+            mainWindow.WindowState = System.Windows.WindowState.Minimized;
+
         IsExecuting = true;
         IsPaused = false;
         _cancellationTokenSource = new CancellationTokenSource();
@@ -153,13 +157,19 @@ public partial class ExecutionViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Erro durante execução: {ex.Message}";
+            StatusMessage = $"❌ Erro durante execução: {ex.Message}";
+            System.Windows.MessageBox.Show($"Erro: {ex.Message}\n\n{ex.StackTrace}", "Erro na Execução", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
         finally
         {
             IsExecuting = false;
             IsPaused = false;
             _cancellationTokenSource?.Dispose();
+
+            if (StatusMessage.Contains("Sucesso") || StatusMessage.Contains("concluída"))
+            {
+                System.Windows.MessageBox.Show("✓ Fluxo finalizado com sucesso!", "Execução Completa", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            }
         }
     }
 
